@@ -4,11 +4,12 @@ clearvars
 
 %% File loading
 % This section does... wanka
+sourceDir = "DataSets/";
 sourceFiles = ["Stockholm Bromma smhi-opendata 20200130", ...
                 "Kiruna Flygplats smhi-opendata 20200130", ...
                 "Falsterbo smhi-opendata 20200130"];
 %%
-if (~exist('DataSets', 'dir'))
+if (~exist(sourceDir, 'dir'))
     fprintf("DataSets dir not found!\n\n")
     return
 end
