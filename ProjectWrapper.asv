@@ -6,14 +6,13 @@ clearvars
 % This section does... wanka
 sourceDir = "DataSets/";
 sourceFiles = ["Stockholm Bromma smhi-opendata 20200130.csv", ...
-               "Kiruna Flygplats smhi-opendata 20200130.csv", ...
-               "Falsterbo smhi-opendata 20200130.csv"];
+                    "Kiruna Flygplats smhi-opendata 20200130.csv", ...
+                    "Falsterbo smhi-opendata 20200130.csv"];
 
 if (~exist(sourceDir, 'dir'))
     fprintf("DataSets dir not found!\n\n")
     return
 end
-
 Sets(1:length(sourceFiles)) = WeatherSet;
 for k = 1 : length(Sets) % Iterate to load all chosen data sets
     %TODO load date: Sets(1, k).DateStart = readcell(sourceFiles(k), 'range', 'A8');
