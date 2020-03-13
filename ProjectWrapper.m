@@ -15,23 +15,31 @@ if (~exist(sourceDir, 'dir'))
 end
 
 Sets(1:length(sourceFiles)) = WeatherSet;
-for k = 1 : length(Sets) % Iterate to load all chosen data sets
+for k = 1 : 1%length(Sets) % Iterate to load all chosen data sets
     %TODO load date: Sets(1, k).DateStart = readcell(sourceFiles(k), 'range', 'A8');
     %TODO load date: Sets(1, k).DateEnd = xlsread(sourceFiles(k), 'B8:B8');
+    
     Sets(1, k).DataSet = readtable(sourceDir + sourceFiles(k));
     Sets(1, k).DataSet.Properties.VariableNames = {'Date', 'Time', 'Degrees', 'Quality'};
+    Sets(1, k).DataSet.Date.Format = 'default';
+    Sets(1, k).DataSet.Date = Sets(1,k).DataSet.Date + Sets(1,k).DataSet.Time;
+    Sets(1, k).CleanSet = timetable(Sets(1,k).DataSet.Date, Sets(1,k).DataSet.Degrees, Sets(1,k).DataSet.Quality);
+    Sets(1, k).CleanSet.Properties.VariableNames = {'Degrees', 'Quality'};
+    
     Sets(1, k).FileName = sourceFiles(k);
 end
 clear sourceDir sourceFiles k; % Remove variables not to be used again
 %% Data parsing
 % Transform the data and calculate daily average temperatures
 
+% Set time range for source data
+Sets(1,:).TimeRange = timerange('2000-01-01', '2020-01-01');
 
 %% Deseasoning
 % Remove the seasonal component of the temperature
-SeasonFunc = @(a0, a1, a2, a3, t) a0 * sin(2 * pi / 365 * (t - a1)) + a2*t + a3;% + a1 * (sin(2 * pi / 365 * t)).^0.1;
+SeasonFunc = @(a0, a1, a2, a3, t) a0 + a1 * t + a2 * sin(2 * pi / 365 * (t - a3));% + a1 * (sin(2 * pi / 365 * t)).^0.1;
 figure(1);
-plot(SeasonFunc(14, 1, 0.00005, 8, 1:0.1:10000))
+plot(SeasonFunc(18, 0.000005, 0.5, 0.5, 1:0.1:1000))
 
 %%
 
