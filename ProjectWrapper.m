@@ -15,7 +15,7 @@ if (~exist(sourceDir, 'dir'))
 end
 
 Sets(1:length(sourceFiles)) = WeatherSet;
-for k = 1 : 1%length(Sets) % Iterate to load all chosen data sets
+for k = 1 : length(Sets) % Iterate to load all chosen data sets
     %TODO load date: Sets(1, k).DateStart = readcell(sourceFiles(k), 'range', 'A8');
     %TODO load date: Sets(1, k).DateEnd = xlsread(sourceFiles(k), 'B8:B8');
     
@@ -33,13 +33,17 @@ clear sourceDir sourceFiles k; % Remove variables not to be used again
 % Transform the data and calculate daily average temperatures
 
 % Set time range for source data
-Sets(1,:).TimeRange = timerange('2000-01-01', '2020-01-01');
+%Sets(1,:).TimeRange = timerange('2000-01-01', '2020-01-01');
+Sets(1,1).DateStart = datetime(2000,1,1);
+Sets(1,1).DateEnd = datetime(2020,1,1);
 
 %% Deseasoning
 % Remove the seasonal component of the temperature
 SeasonFunc = @(a0, a1, a2, a3, t) a0 + a1 * t + a2 * sin(2 * pi / 365 * (t - a3));% + a1 * (sin(2 * pi / 365 * t)).^0.1;
-figure(1);
-plot(SeasonFunc(18, 0.000005, 0.5, 0.5, 1:0.1:1000))
+%figure(1);
+%plot(SeasonFunc(18, 0.000005, 0.5, 0.5, 1:0.1:1000))
+
+[x, FVAL] = fmincon(@(x) (Sets(1,:).TimeRange - SeasonFunc(x(1), x(2), x(3), x(4), 1:365*20))^2, [18;0.005;5;0], [], [], [])
 
 %%
 
