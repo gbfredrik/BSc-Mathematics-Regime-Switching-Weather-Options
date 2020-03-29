@@ -1,7 +1,12 @@
-function [outputArg1,outputArg2] = DailyAverage(inputArg1,inputArg2)
+function [DAT] = DailyAverage(tempSeries, type)
 %DAILYAVERAGE Summary of this function goes here
 %   Detailed explanation goes here
-outputArg1 = inputArg1;
-outputArg2 = inputArg2;
+
+if isequal(type, 'MinMax')
+   DAT = (retime(tempSeries, 'daily', 'min') + retime(tempSeries, 'daily', 'max')) / 2;
+elseif isequal(type, 'Mean')
+   DAT = retime(tempSeries, 'daily', 'mean');
+end
+
 end
 
