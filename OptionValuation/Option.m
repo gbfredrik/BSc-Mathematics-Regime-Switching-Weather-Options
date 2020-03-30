@@ -3,9 +3,11 @@ classdef Option
     %   Detailed explanation goes here
     
     properties
-        Tref % Temperature reference level, default 18deg C
+        Tref = 18 % Temperature reference level, default 18deg C
         TTM % Time to maturity
         Rate % Risk-free rate
+        Strike = 100
+        
     end
 end
 

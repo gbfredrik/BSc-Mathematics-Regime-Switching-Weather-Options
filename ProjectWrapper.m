@@ -1,9 +1,15 @@
 %% Resetter
-% Empties workspace of variables on start
+% Clears workspace of variables and figures on start
+beep off
 clearvars
+close ALL
+
+%% Settings - Run on launch
+% Constants are defined through a class for easy access
+settings = Settings;
 
 %% File loading
-% This section does... wanka
+% This section does... 
 sourceDir = "DataSets/";
 sourceFiles = ["Stockholm Bromma smhi-opendata 20200130.csv", ...
                "Kiruna Flygplats smhi-opendata 20200130.csv", ...
@@ -18,6 +24,7 @@ Sets(1:length(sourceFiles)) = WeatherSet;
 for k = 1 : length(Sets) % Iterate to load all chosen data sets
     %TODO load date: Sets(1, k).DateStart = readcell(sourceFiles(k), 'range', 'A8');
     %TODO load date: Sets(1, k).DateEnd = xlsread(sourceFiles(k), 'B8:B8');
+    Sets(1, k).FileName = sourceFiles(k);
     
     Sets(1, k).DataSet = readtable(sourceDir + sourceFiles(k));
     Sets(1, k).DataSet.Properties.VariableNames = {'Date', 'Time', 'Degrees', 'Quality'};
@@ -26,10 +33,11 @@ for k = 1 : length(Sets) % Iterate to load all chosen data sets
     Sets(1, k).CleanSet = timetable(Sets(1,k).DataSet.Date, Sets(1,k).DataSet.Degrees, Sets(1,k).DataSet.Quality);
     Sets(1, k).CleanSet.Properties.VariableNames = {'Degrees', 'Quality'};
     
-    Sets(1, k).FileName = sourceFiles(k);
+    Sets(1, k).CleanSet = DailyAverage(Sets(1, k).CleanSet(:,1), settings.avgType);
+    
+    % TODO: Filter by dates here
 end
 
-DAT = retime(Sets(1, 1).CleanSet(:,1), 'daily', 'mean'); % TODO: Change to use DailyAverage(.)
 clear sourceDir sourceFiles k; % Remove variables not to be used again
 %% Data parsing
 % Transform the data and calculate daily average temperatures
