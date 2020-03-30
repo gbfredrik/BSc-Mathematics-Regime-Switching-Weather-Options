@@ -3,9 +3,11 @@ function [DAT] = DailyAverage(tempSeries, type)
 %   Detailed explanation goes here
 
 if isequal(type, 'MinMax')
-   DAT = (retime(tempSeries, 'daily', 'min') + retime(tempSeries, 'daily', 'max')) / 2;
+    tempMin = retime(tempSeries, 'daily', 'min');
+    tempMax = retime(tempSeries, 'daily', 'max');
+    DAT = (tempMin.Degrees + tempMax.Degrees) / 2; % Todo change to return timetable still
 elseif isequal(type, 'Mean')
-   DAT = retime(tempSeries, 'daily', 'mean');
+    DAT = retime(tempSeries, 'daily', 'mean');
 end
 
 end
