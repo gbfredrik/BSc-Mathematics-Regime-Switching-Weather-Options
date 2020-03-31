@@ -14,6 +14,4 @@ else
     fprintf(strcat('There is no support for the type ', type, '.\n'))
     fprintf('Try "MinMax" or "Mean" instead.\n')
 end
-
 end
-

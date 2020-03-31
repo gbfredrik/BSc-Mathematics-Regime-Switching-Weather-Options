@@ -1,3 +1,4 @@
+%% ProjectWrapper
 %% Resetter
 % Clears workspace of variables and figures on start
 beep off
@@ -33,47 +34,69 @@ for k = 1 : length(Sets) % Iterate to load all chosen data sets
     Sets(1, k).CleanSet = timetable(Sets(1,k).DataSet.Date, Sets(1,k).DataSet.Degrees, Sets(1,k).DataSet.Quality);
     Sets(1, k).CleanSet.Properties.VariableNames = {'Degrees', 'Quality'};
     
-    Sets(1, k).CleanSet = DailyAverage(Sets(1, k).CleanSet(:,1), settings.avgType);
-    
-    % TODO: Filter by dates here
+    Sets(1, k).ShortName = extractBefore(Sets(1, k).FileName, ' smhi-');
 end
 
 clear sourceDir sourceFiles k; % Remove variables not to be used again
 %% Data parsing
 % Transform the data and calculate daily average temperatures
 
+
 % Set time range for source data
-%Sets(1,:).TimeRange = timerange('2000-01-01', '2020-01-01');
-Sets(1,1).DateStart = datetime(2000,1,1);
+%Sets(1,:).TimeRange = timerange('2010-01-01', '2020-01-01');
+Sets(1,1).DateStart = datetime(2010,1,1);
 Sets(1,1).DateEnd = datetime(2020,1,1);
+for k = 1 : length(Sets) % Iterate to parse all chosen data sets
+    % TODO: Filter by dates here
+
+    Sets(1, k).CleanSet = DailyAverage(Sets(1, k).CleanSet(:,1), settings.avgType);
+end
 
 %% Deseasoning
 % Remove the seasonal component of the temperature
-SeasonFunc = @(a0, a1, a2, a3, t) a0 + a1 * t + a2 * sin(2 * pi / 365 * (t - a3));% + a1 * (sin(2 * pi / 365 * t)).^0.1;
-%figure(1);
-temp = transpose(DAT.Degrees(21000:25839,:));
+seasonFunction = @(a0, a1, a2, a3, t) a0 + a1 * t + a2 * sin(2 * pi / 365 * (t - a3));% + a1 * (sin(2 * pi / 365 * t)).^0.1;
 
-[X, FVAL] = fmincon(@(x) sum((temp - SeasonFunc(x(1), x(2), x(3), x(4), 0:4839)).^2), [18;0.005;5;0]);
+X = zeros(4, length(Sets));
+FVAL = zeros(1, length(Sets));
 
+for k = 1 : length(Sets) % Iterate to deseason all chosen data sets
+    [X(:, k), FVAL(1, k)] = Deseason(transpose(Sets(1, k).CleanSet.Degrees(end-3650:end,:)), seasonFunction, settings.fminconOptions);
+    % TODO: Add try/catch in Deseason
+end
+
+clear k
 %%
 close ALL
 
-figure(1)
-hold on
-plot(temp, 'b')
-plot(SeasonFunc(X(1), X(2), X(3), X(4), 0:4839), 'r', 'LineWidth', 2)
-plot(SeasonFunc(X(1), X(2), 0, 0, 0:4839))
-plot(18 .* ones(4840, 1), 'g', 'LineWidth', 2)
-hold off
+% Settings for figures
+showFigures = true;
+saveFigures = true;
+showTref = true;
+showLinTrend = true;
 
-figure(2)
-hold on
-subplot(2,1,1)
-plot(temp - SeasonFunc(X(1), X(2), X(3), X(4), 0:4839))
+status = zeros(1, length(Sets));
 
-subplot(2,1,2)
-qqplot(temp - SeasonFunc(X(1), X(2), X(3), X(4), 0:4839))
-hold off
+for k = 1 : length(Sets) % Iterate to generate DAT figures
+    [status(k)] = GenerateDATPlot(Sets(1, k), seasonFunction, X(:, k), ...
+        showFigures, saveFigures, showTref, showLinTrend);
+    %fprintf(sprintf('DAT plot status: %d.\n', status(1, k)))
+end
+
+% 
+% figure(2)
+% hold on
+% subplot(2,1,1)
+% plot(temp - seasonFunction(X(1), X(2), X(3), X(4), 0:3650))
+% 
+% subplot(2,1,2)
+% qqplot(temp - seasonFunction(X(1), X(2), X(3), X(4), 0:3650))
+% hold off
+
+clear k showFigures saveFigures showTref showLinTrend status
+%%
+
+
+
 
 
 

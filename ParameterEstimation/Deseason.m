@@ -1,8 +1,11 @@
-function [TempVal] = Deseason(a0, a1, a2, a3, t) 
-%DESEASON Summary of this function goes here
-%   Detailed explanation goes here
+function [X, FVAL] = Deseason(temperature, seasonFunction, options) 
+%DESEASON of temperature series
+%   Used for the deseasoning of temperature series. Requires input of the
+%   temperature, anonymous season function, and fmincon options. Will be
+%   extended to correctly handle dynamic time periods.
 
-SeasonFunc = @(a0, a1, a2, a3, t) a0 + a1 * t + a2 * sin(2 * pi / 365 * (t - a3));% + a1 * (sin(2 * pi / 365 * t)).^0.1;
-TempVal = SeasonFunc(a0, a1, a2, a3, t);
+[X, FVAL] = fmincon(@(x) sum((temperature - ...
+    seasonFunction(x(1), x(2), x(3), x(4), 0:3650)).^2), ... % TODO Change time periods to dynamic
+    [18;0.005;5;0], [], [], [], [], [], [], [], options);
 end
 
