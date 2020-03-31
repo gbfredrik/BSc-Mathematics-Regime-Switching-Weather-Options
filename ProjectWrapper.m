@@ -69,7 +69,7 @@ clear k
 close ALL
 
 % Settings for figures
-showFigures = true;
+showFigures = false;
 saveFigures = true;
 showTref = true;
 showLinTrend = true;
@@ -82,15 +82,21 @@ for k = 1 : length(Sets) % Iterate to generate DAT figures
     %fprintf(sprintf('DAT plot status: %d.\n', status(1, k)))
 end
 
-% 
-% figure(2)
-% hold on
-% subplot(2,1,1)
-% plot(temp - seasonFunction(X(1), X(2), X(3), X(4), 0:3650))
-% 
-% subplot(2,1,2)
-% qqplot(temp - seasonFunction(X(1), X(2), X(3), X(4), 0:3650))
-% hold off
+
+figure()
+hold on
+for k = 1 : length(Sets) % Iterate to generate deseasoned figures
+subplot(3,2,2*k-1)
+plot(Sets(1,k).CleanSet.Time(end-3650:end,:), transpose(Sets(1,k). ...
+    CleanSet.Degrees(end-3650:end,:)) - seasonFunction(X(1,k), X(2,k), ...
+    X(3,k), X(4,k), 0:3650))
+
+subplot(3,2,2*k)
+histfit(transpose(Sets(1,k).CleanSet.Degrees(end-3650:end,:)) - ...
+    seasonFunction(X(1,k), X(2,k), X(3,k), X(4,k), 0:3650))
+
+end
+hold off
 
 clear k showFigures saveFigures showTref showLinTrend status
 %%
