@@ -64,6 +64,11 @@ for k = 1 : length(Sets) % Iterate to deseason all chosen data sets
     % TODO: Add try/catch in Deseason
 end
 
+for k = 1 : length(Sets)
+    Sets(1, k).Deseasoned = Sets(1, k).CleanSet(end-3650:end,:);
+    Sets(1, k).Deseasoned.Degrees = Sets(1, k).Deseasoned.Degrees - transpose(seasonFunction(X(1,k), X(2,k), X(3,k), X(4,k), 0:3650));
+end
+
 clear k
 %%
 close ALL
@@ -87,13 +92,10 @@ figure()
 hold on
 for k = 1 : length(Sets) % Iterate to generate deseasoned figures
 subplot(3,2,2*k-1)
-plot(Sets(1,k).CleanSet.Time(end-3650:end,:), transpose(Sets(1,k). ...
-    CleanSet.Degrees(end-3650:end,:)) - seasonFunction(X(1,k), X(2,k), ...
-    X(3,k), X(4,k), 0:3650))
+plot(Sets(1,k).Deseasoned.Time, Sets(1,k).Deseasoned.Degrees)
 
 subplot(3,2,2*k)
-histfit(transpose(Sets(1,k).CleanSet.Degrees(end-3650:end,:)) - ...
-    seasonFunction(X(1,k), X(2,k), X(3,k), X(4,k), 0:3650))
+qqplot(Sets(1,k).Deseasoned.Degrees)
 
 end
 hold off
