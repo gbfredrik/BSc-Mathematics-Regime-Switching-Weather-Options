@@ -31,8 +31,8 @@ for k = 1 : length(Sets) % Iterate to load all chosen data sets
     Sets(1, k).DataSet.Properties.VariableNames = {'Date', 'Time', 'Degrees', 'Quality'};
     Sets(1, k).DataSet.Date.Format = 'default';
     Sets(1, k).DataSet.Date = Sets(1,k).DataSet.Date + Sets(1,k).DataSet.Time;
-    Sets(1, k).CleanSet = timetable(Sets(1,k).DataSet.Date, Sets(1,k).DataSet.Degrees, Sets(1,k).DataSet.Quality);
-    Sets(1, k).CleanSet.Properties.VariableNames = {'Degrees', 'Quality'};
+    Sets(1, k).Clean = timetable(Sets(1,k).DataSet.Date, Sets(1,k).DataSet.Degrees, Sets(1,k).DataSet.Quality);
+    Sets(1, k).Clean.Properties.VariableNames = {'Degrees', 'Quality'};
     
     Sets(1, k).ShortName = extractBefore(Sets(1, k).FileName, ' smhi-');
 end
@@ -49,7 +49,8 @@ Sets(1,1).DateEnd = datetime(2020,1,1);
 for k = 1 : length(Sets) % Iterate to parse all chosen data sets
     % TODO: Filter by dates here
 
-    Sets(1, k).CleanSet = DailyAverage(Sets(1, k).CleanSet(:,1), settings.avgType);
+    Sets(1, k).Clean = DailyAverage(Sets(1, k).Clean(:,1), settings.avgType);
+    Sets(1, k).Clean = Sets(1, k).Clean(~IsLeapDay(Sets(1, k).Clean.Time),:);
 end
 
 %% Deseasoning
@@ -60,12 +61,12 @@ X = zeros(4, length(Sets));
 FVAL = zeros(1, length(Sets));
 
 for k = 1 : length(Sets) % Iterate to deseason all chosen data sets
-    [X(:, k), FVAL(1, k)] = Deseason(transpose(Sets(1, k).CleanSet.Degrees(end-3650:end,:)), seasonFunction, settings.fminconOptions);
+    [X(:, k), FVAL(1, k)] = Deseason(transpose(Sets(1, k).Clean.Degrees(end-3650:end,:)), seasonFunction, settings.fminconOptions);
     % TODO: Add try/catch in Deseason
 end
 
 for k = 1 : length(Sets)
-    Sets(1, k).Deseasoned = Sets(1, k).CleanSet(end-3650:end,:);
+    Sets(1, k).Deseasoned = Sets(1, k).Clean(end-3650:end,:);
     Sets(1, k).Deseasoned.Degrees = Sets(1, k).Deseasoned.Degrees - transpose(seasonFunction(X(1,k), X(2,k), X(3,k), X(4,k), 0:3650));
 end
 
@@ -74,16 +75,17 @@ clear k
 close ALL
 
 % Settings for figures
-showFigures = false;
+showFigures = true;
 saveFigures = true;
+showSeason = false;
 showTref = true;
-showLinTrend = true;
+showLinTrend = false;
 
 status = zeros(1, length(Sets));
 
 for k = 1 : length(Sets) % Iterate to generate DAT figures
     [status(k)] = GenerateDATPlot(Sets(1, k), seasonFunction, X(:, k), ...
-        showFigures, saveFigures, showTref, showLinTrend);
+        showFigures, saveFigures, showSeason, showTref, showLinTrend);
     %fprintf(sprintf('DAT plot status: %d.\n', status(1, k)))
 end
 
@@ -100,7 +102,7 @@ qqplot(Sets(1,k).Deseasoned.Degrees)
 end
 hold off
 
-clear k showFigures saveFigures showTref showLinTrend status
+clear k showFigures saveFigures showSeason showTref showLinTrend status
 %%
 
 

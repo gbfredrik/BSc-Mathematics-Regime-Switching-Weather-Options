@@ -8,7 +8,7 @@ classdef WeatherSet
         DataSet % Data array
         DateStart % Start date of data
         DateEnd % Last date of data
-        CleanSet
+        Clean
         Deseasoned
     end
 end
