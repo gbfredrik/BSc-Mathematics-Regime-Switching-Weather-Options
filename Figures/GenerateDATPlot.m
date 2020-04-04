@@ -33,7 +33,11 @@ function [status] = GenerateDATPlot(Set, seasonFunction, X, ...
     
     if saveFigures
         %print(f, sprintf('Figures/DAT/%s DAT plot %s', data.ShortName, datestr(now)), '-dpng');
-        print(f, sprintf('Figures/DAT/%s DAT Plot', Set.ShortName), '-dpng');
+        if verLessThan('matlab', '9.8.0')
+            print(f, sprintf('Figures/DAT/%s DAT Plot', Set.ShortName), '-dpng');
+        else
+            exportgraphics(f, sprintf('Figures/DAT/%s DAT%s', Set.ShortName, '.png'));
+        end
     end
     status = 1;
 % catch

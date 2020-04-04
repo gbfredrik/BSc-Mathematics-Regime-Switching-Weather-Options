@@ -12,9 +12,9 @@ settings = Settings;
 %% File loading
 % This section does... 
 sourceDir = "DataSets/";
-sourceFiles = ["Stockholm Bromma smhi-opendata 20200130.csv", ...
-               "Kiruna Flygplats smhi-opendata 20200130.csv", ...
-               "Falsterbo smhi-opendata 20200130.csv"];
+sourceFiles = ["Stockholm Bromma smhi-opendata 20200404.csv", ...
+               "Kiruna Flygplats smhi-opendata 20200404.csv", ...
+               "Falsterbo smhi-opendata 20200404.csv"];
 
 if (~exist(sourceDir, 'dir'))
     fprintf("DataSets dir not found!\n\n")
@@ -78,7 +78,7 @@ close ALL
 showFigures = true;
 saveFigures = true;
 showSeason = false;
-showTref = true;
+showTref = false;
 showLinTrend = false;
 
 status = zeros(1, length(Sets));
