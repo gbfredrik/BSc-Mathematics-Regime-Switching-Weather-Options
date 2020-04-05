@@ -31,6 +31,11 @@ for k = 1 : length(Sets) % Iterate to load all chosen data sets
     Sets(1, k).DataSet.Properties.VariableNames = {'Date', 'Time', 'Degrees', 'Quality'};
     Sets(1, k).DataSet.Date.Format = 'default';
     Sets(1, k).DataSet.Date = Sets(1,k).DataSet.Date + Sets(1,k).DataSet.Time;
+    Sets(1, k).DataSet.Time = []; % Remove now unneeded time column
+    
+    %Sets(1, k).DataSet = Sets(1, k).DataSet(timerange('2005-01-01', '2019-12-31'),:);
+    Sets(1, k).DataSet = Sets(1, k).DataSet(Sets(1, k).DataSet.Date >= datetime(2005,01,01), :);
+    
     Sets(1, k).Clean = timetable(Sets(1,k).DataSet.Date, Sets(1,k).DataSet.Degrees, Sets(1,k).DataSet.Quality);
     Sets(1, k).Clean.Properties.VariableNames = {'Degrees', 'Quality'};
     
@@ -48,11 +53,20 @@ Sets(1,1).DateStart = datetime(2010,1,1);
 Sets(1,1).DateEnd = datetime(2020,1,1);
 for k = 1 : length(Sets) % Iterate to parse all chosen data sets
     % TODO: Filter by dates here
-
+    
     Sets(1, k).Clean = DailyAverage(Sets(1, k).Clean(:,1), settings.avgType);
     Sets(1, k).Clean = Sets(1, k).Clean(~IsLeapDay(Sets(1, k).Clean.Time),:);
 end
 
+% Check for nans
+for k = 1 : length(Sets)
+    n = sum(isnan(Sets(1, k).Clean.Degrees));
+    if n ~= 0
+        fprintf(2, sprintf('Set %s contains %d NaN values.\n', Sets(1, k).ShortName, n))
+    end
+end
+
+clear k
 %% Deseasoning
 % Remove the seasonal component of the temperature
 seasonFunction = @(a0, a1, a2, a3, t) a0 + a1 * t + a2 * sin(2 * pi / 365 * (t - a3));% + a1 * (sin(2 * pi / 365 * t)).^0.1;
@@ -77,7 +91,7 @@ close ALL
 % Settings for figures
 showFigures = true;
 saveFigures = true;
-showSeason = false;
+showSeason = true;
 showTref = false;
 showLinTrend = false;
 
