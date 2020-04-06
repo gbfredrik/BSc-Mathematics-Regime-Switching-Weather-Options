@@ -1,6 +1,7 @@
-function [ld] = IsLeapDay(d)
+function [ld] = IsLeapDay_DEPRECATED(d)
 %UNTITLED Summary of this function goes here
 %   Detailed explanation goes here
+% Usage: Sets(1,k).Clean = Sets(1,k).Clean(~IsLeapDay(Sets(1,k).Clean.Time),:);
 
 ld = false(1, length(d));
 

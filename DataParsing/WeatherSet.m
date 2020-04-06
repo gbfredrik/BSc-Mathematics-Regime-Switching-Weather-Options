@@ -5,10 +5,10 @@ classdef WeatherSet
     properties
         FileName % Name of .csv file
         ShortName
-        DateStart % Start date of data
-        DateEnd % Last date of data
+        InSample % Time range of in-sample data
+        OutOfSample % Time range for out-of-sample
         DataSet % Data array
-        Clean
+        Clean % Set of cleaned DATs
         Deseasoned
     end
 end

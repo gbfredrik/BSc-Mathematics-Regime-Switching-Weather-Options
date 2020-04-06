@@ -10,22 +10,22 @@ function [status] = GenerateDATPlot(Set, seasonFunction, X, ...
     
     hold on
     title(Set.ShortName)
-    plot(Set.Clean.Time(end-3650:end,:), transpose(Set.Clean.Degrees(end-3650:end,:)), 'b')
+    plot(Set.Clean.Time(Set.InSample), transpose(Set.Clean.Degrees(Set.InSample)), 'b')
     legendLabels = ["DAT"];
 
     if showSeason
-        plot(seasonFunction(X(1), X(2), X(3), X(4), 0:3650), 'r', 'LineWidth', 2)
+        plot(seasonFunction(X(1), X(2), X(3), X(4), 0:length(Set.InSample)-1), 'r', 'LineWidth', 2)
         legendLabels = [legendLabels, "Seasonal"];
     end
     
     
     if showTref
-        plot(18 .* ones(3650, 1), 'g', 'LineWidth', 2)
+        plot(18 .* ones(length(Set.InSample), 1), 'g', 'LineWidth', 2)
         legendLabels = [legendLabels, "T_r_e_f"];
     end
 
     if showLinTrend
-        plot(seasonFunction(X(1), X(2), 0, 0, 0:3650), 'c', 'LineWidth', 2)
+        plot(seasonFunction(X(1), X(2), 0, 0, 0:length(Set.InSample)-1), 'c', 'LineWidth', 2)
         legendLabels = [legendLabels, "Linear trend"];
     end
     legend(legendLabels, 'Location', 'EastOutside')
