@@ -45,8 +45,8 @@ clear sourceDir sourceFiles k; % Remove variables not to be used again
 
 
 for k = 1 : length(Sets) % Iterate to parse all chosen data sets
-    Sets(1,k).InSample = datetime(2005,01,01):datetime(2012,12,31); %timerange('2005-01-01', '2012-12-31', 'closed');
-    Sets(1,k).OutOfSample = datetime(2013,01,01):datetime(2019,12,31); %timerange('2013-01-01', '2019-12-31', 'closed');
+    Sets(1,k).InSample = datetime(2006,01,01):datetime(2009,12,31); %timerange('2006-01-01', '2009-12-31', 'closed');
+    Sets(1,k).OutOfSample = datetime(2010,01,01):datetime(2019,12,31); %timerange('2010-01-01', '2019-12-31', 'closed');
     Sets(1,k).InSample(month(Sets(1,k).InSample) == 2 & ...
         day(Sets(1,k).InSample) == 29) = []; % Clean leap days
     Sets(1,k).OutOfSample(month(Sets(1,k).OutOfSample) == 2 & ...
@@ -98,13 +98,15 @@ showFigures = true;
 saveFigures = true;
 showSeason = true;
 showTref = false;
-showLinTrend = false;
+showLinTrend = true;
+setPeriod = "In"; % Alternatives: "In", "InOut"
 
 status = zeros(1,length(Sets));
 
 for k = 1 : length(Sets) % Iterate to generate DAT figures
     [status(k)] = GenerateDATPlot(Sets(1,k), seasonFunction, X(:,k), ...
-        showFigures, saveFigures, showSeason, showTref, showLinTrend);
+        showFigures, saveFigures, showSeason, showTref, showLinTrend, ...
+        setPeriod);
     %fprintf(sprintf('DAT plot status: %d.\n', status(1,k)))
 end
 

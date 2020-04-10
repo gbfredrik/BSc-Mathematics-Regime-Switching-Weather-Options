@@ -1,5 +1,5 @@
 function [status] = GenerateDATPlot(Set, seasonFunction, X, ...
-    showFigures, saveFigures, showSeason, showTref, showLinTrend)
+    showFigures, saveFigures, showSeason, showTref, showLinTrend, setPeriod)
 
 % try
     if showFigures
@@ -8,10 +8,16 @@ function [status] = GenerateDATPlot(Set, seasonFunction, X, ...
         f = figure('visible', 'off');
     end
     
+    if setPeriod == "In"
+        period = Set.InSample;
+    elseif setPeriod == "InOut"
+        period = [Set.InSample, Set.OutOfSample];
+    end
+    
     hold on
     title(Set.ShortName)
-    plot(Set.Clean.Time(Set.InSample), transpose(Set.Clean.Degrees(Set.InSample)), 'b')
-    legendLabels = ["DAT"];
+    plot(Set.Clean.Time(period), transpose(Set.Clean.Degrees(period)), 'b')
+    legendLabels = "DAT";
 
     if showSeason
         plot(seasonFunction(X(1), X(2), X(3), X(4), 0:length(Set.InSample)-1), 'r', 'LineWidth', 2)
