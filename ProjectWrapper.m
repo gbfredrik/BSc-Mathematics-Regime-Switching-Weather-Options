@@ -65,29 +65,28 @@ for k = 1 : length(Sets)
     end
 end
 
-clear k
+clear k n
 %% Deseasoning
 % Remove the seasonal component of the temperature
-seasonFunction = @(a0, a1,a2, a3, t) a0 + a1 * t + a2 * sin(2 * pi / 365 * (t - a3));% + a1 * (sin(2 * pi / 365 * t)).^0.1;
+seasonFunction = @(a, t) a(1) + a(2) * t + a(3) * sin(2 * pi / 365 * (t - a(4)));
 
 X = zeros(4, length(Sets));
 FVAL = zeros(1,length(Sets));
-
+guess = [18, 0.0005, 5, 0];
 for k = 1 : length(Sets) % Iterate to deseason all chosen data sets
     [X(:, k), FVAL(1,k)] = ...
         Deseason(transpose(Sets(1,k).Clean.Degrees(Sets(1,k).InSample)), ...
-        seasonFunction, length(Sets(1,k).InSample), settings.fminconOptions);
+        seasonFunction, length(Sets(1,k).InSample), guess, settings.fminconOptions);
     % TODO: Add try/catch in Deseason
 end
 
 for k = 1 : length(Sets)
     Sets(1,k).Deseasoned = Sets(1,k).Clean(Sets(1,k).InSample,:);
     Sets(1,k).Deseasoned.Degrees = Sets(1,k).Deseasoned.Degrees - ...
-        transpose(seasonFunction(X(1,k), X(2,k), X(3,k), X(4,k), ...
-        0:length(Sets(1,k).InSample)-1));
+        transpose(seasonFunction(X(:,k), 0:length(Sets(1,k).InSample)-1));
 end
 
-clear k
+clear k guess
 %% Generation of DAT and Deseasoned plots
 % Allows for specific settings for the plots. 
 % Used to generate figures for the written thesis report.
@@ -110,19 +109,14 @@ for k = 1 : length(Sets) % Iterate to generate DAT figures
     %fprintf(sprintf('DAT plot status: %d.\n', status(1,k)))
 end
 
-
-figure()
-hold on
 for k = 1 : length(Sets) % Iterate to generate deseasoned figures
-    subplot(3,2,2*k-1)
-    plot(Sets(1,k).Deseasoned.Time, Sets(1,k).Deseasoned.Degrees)
-
-    subplot(3,2,2*k)
-    qqplot(Sets(1,k).Deseasoned.Degrees)
+    [status(k)] = GenerateDeseasonedPlots(Sets(1,k), ...
+        showFigures, saveFigures);
+    %fprintf(sprintf('Deseasoned plot status: %d.\n', status(1,k)))
 end
-hold off
 
-clear k showFigures saveFigures showSeason showTref showLinTrend status
+clear k showFigures saveFigures showSeason showTref showLinTrend ...
+    setPeriod status
 %%
 
 
