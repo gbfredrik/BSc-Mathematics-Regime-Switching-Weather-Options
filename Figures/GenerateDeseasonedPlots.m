@@ -10,7 +10,8 @@ function [status] = GenerateDeseasonedPlots(Set, showFigures, saveFigures)
     end
     plot(Set.Deseasoned.Time, Set.Deseasoned.Degrees)
     ylabel('Degrees Celsius')
-    
+    box off
+
     if showFigures
         f2 = figure();
     else
