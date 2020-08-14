@@ -123,7 +123,10 @@ clear k showFigures saveFigures showSeason showTref showLinTrend ...
 %%
 
 
+Theta = []; % Initial parameter guess. Use last known optimum
 
-
+for k = 1 : length(Sets)
+    [Set_f(1,k), Theta_f(1,k)] = EM(Sets(1,k), Theta(k), 1000, true);
+end
 
 
