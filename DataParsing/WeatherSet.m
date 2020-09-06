@@ -10,5 +10,11 @@ classdef WeatherSet
         DataSet % Data array
         Clean % Set of cleaned DATs
         Deseasoned
+        
+        Skewness
+        Kurtosis
+        
+        ML_Theta
+        ML_FVal
     end
 end

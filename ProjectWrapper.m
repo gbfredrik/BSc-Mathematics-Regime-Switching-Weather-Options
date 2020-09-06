@@ -97,7 +97,7 @@ clear k guess
 close ALL
 
 % Settings for figures
-showFigures = true;
+showFigures = false;
 saveFigures = true;
 showSeason = true;
 showTref = false;
@@ -118,15 +118,102 @@ for k = 1 : length(Sets) % Iterate to generate deseasoned figures
     %fprintf(sprintf('Deseasoned plot status: %d.\n', status(1,k)))
 end
 
+for k = 1 : length(Sets) % Iterate to generate skewness and kurtosis
+    Sets(1,k).Skewness = skewness(Sets(1,k).Deseasoned.Degrees);
+    Sets(1,k).Kurtosis = kurtosis(Sets(1,k).Deseasoned.Degrees);
+    fprintf(sprintf('Set %i ''%s'', skewness: %d, kurtosis: %d.\n', k, Sets(1,k).ShortName, Sets(1,k).Skewness, Sets(1,k).Kurtosis));
+end
+
 clear k showFigures saveFigures showSeason showTref showLinTrend ...
     setPeriod status
-%%
+%% Parameter Estimation
+% Define GH probability density function
+f_GH = @(x, lambda, alpha, beta, delta, mu) ...
+    (alpha^2 - beta^2)^(lambda) ...
+    / (sqrt(2*pi) * delta^lambda * alpha^(lambda - 1/2) * besselk(lambda, delta * sqrt(alpha^2 - beta^2))) ...
+    * (sqrt(delta^2 + (x - mu)^2))^(lambda - 1/2) ...
+    * besselk(lambda - 1/2, alpha * sqrt(delta^2 + (x - mu)^2)) * exp(beta * (x - mu));
 
+f_HYP = @(x, alpha, beta, delta, mu) f_GH(x, 1, alpha, beta, delta, mu);
+f_NIG = @(x, alpha, beta, delta, mu) f_GH(x, -1/2, alpha, beta, delta, mu);
+
+% Gör om VG-pdfen! Blir ogiltiga värden som den är nu.
+f_VG = @(x, lambda, alpha, beta, mu) f_GH(x, lambda, alpha, beta, 0, mu);
+
+f_VG_new = @(x, lambda, alpha, beta, mu) (alpha^2 - beta^2)^(2 * lambda) ...
+    * abs(x - mu)^(lambda - 1/2) * besselk(lambda - 1/2, alpha * abs(x - mu)) ...
+    / (sqrt(pi) * gamma(lambda) * (2 * alpha)^(lambda - 1/2)) ...
+    * exp(beta * (x - mu));
+
+%%
+% lambda, alpha, beta, delta, mu
+guess.GH = [1, 1.7178, -0.3921, 1.6783, 0.6179]';
+guess.HYP = [(1), 1.7178, -0.3921, 1.6783, 0.6179]';
+guess.NIG = [(-1/2), 1.7178, -0.3921, 1.6783, 0.6179]';
+guess.VG = [0.5, 0.3, 0.2, 1]';
+
+for k = 1 : length(Sets)
+    [Sets(1, k).ML_Theta.GH, Sets(1, k).ML_FVal.GH] = fmincon(@(x) ...
+        -log_likelihood_f_GH(Sets(1, k).Deseasoned.Degrees, f_GH, x(1), x(2), x(3), x(4), x(5)), ...
+        guess.GH, ...
+        [], [], [], [], [], [], [], settings.fminconOptions);
+    %   A, b, Aeq, beq, lb, ub, nonlcon, options
+    [Sets(1, k).ML_Theta.HYP, Sets(1, k).ML_FVal.HYP] = fmincon(@(x) ...
+        -log_likelihood_f_GH(Sets(1, k).Deseasoned.Degrees, f_GH, x(1), x(2), x(3), x(4), x(5)), ...
+        guess.HYP, ...
+        [], [], [], [], [], [], [], settings.fminconOptions);
+    [Sets(1, k).ML_Theta.NIG, Sets(1, k).ML_FVal.NIG] = fmincon(@(x) ...
+        -log_likelihood_f_GH(Sets(1, k).Deseasoned.Degrees, f_GH, x(1), x(2), x(3), x(4), x(5)), ...
+        guess.NIG, ...
+        [], [], [], [], [], [], [], settings.fminconOptions);
+    [Sets(1, k).ML_Theta.VG, Sets(1, k).ML_FVal.VG] = fmincon(@(x) ...
+        -log_likelihood_f_VG(Sets(1, k).Deseasoned.Degrees, f_VG_new, x(1), x(2), x(3), x(4)), ...
+        guess.VG, ...
+        [], [], [], [], [], [], [], settings.fminconOptions);
+end
+%%
 
 Theta = []; % Initial parameter guess. Use last known optimum
 
 for k = 1 : length(Sets)
-    [Set_f(1,k), Theta_f(1,k)] = EM(Sets(1,k), Theta(k), 1000, true);
+    [Set_f(1, k), Theta_f(1, k)] = EM(Sets(1,k), Theta(k), 1000, true);
 end
 
+%%
+%GH
+lambda = 3.2875; 
+alpha = 1.4813e-5; 
+beta = 0.1839; 
+delta = 5.5849e-6; 
+mu = 0.4638;
 
+
+%HYP
+lambda = 1;
+alpha = 1.71785; 
+beta = -0.3921; 
+delta = 1.6783; 
+mu = 0.6179;
+
+%f_GH(1, lambda, alpha, beta, delta, mu)
+
+%NIG
+lambda = -1/2;
+alpha = 1.5010; 
+beta = -0.4087; 
+delta = 2.2664; 
+mu = 0.6413;
+
+% VG
+lambda = 0.0144;
+alpha = 0.4968; 
+beta = -0.0140; 
+delta = 0.0; 
+mu = 0.5004;
+
+%f_GH(1, lambda, alpha, beta, delta, mu)
+test = zeros(length(Sets(1,1).Deseasoned.Degrees),1);
+for i = 1:length(Sets(1,1).Deseasoned.Degrees)
+    %data = [ data f_GH(x_i, lambda, alpha, beta, delta, mu)];
+    test(i,1) = f_VG_new(Sets(1,1).Deseasoned.Degrees(i), lambda, alpha, beta, mu);
+end
