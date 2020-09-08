@@ -9,7 +9,9 @@ classdef WeatherSet
         OutOfSample % Time range for out-of-sample
         DataSet % Data array
         Clean % Set of cleaned DATs
-        Deseasoned
+        Deseasoned % Set of deseasoned DATs
+        Season_Theta % Optimal deseasoning parameters
+        Season_FVal % Optimal function value for deseasoning
         
         Skewness
         Kurtosis

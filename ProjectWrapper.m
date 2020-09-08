@@ -46,16 +46,19 @@ clear sourceDir sourceFiles k; % Remove variables not to be used again
 % Transform the data and calculate daily average temperatures
 
 for k = 1 : length(Sets) % Iterate to parse all chosen data sets
-    Sets(1,k).InSample = datetime(2006,01,01):datetime(2009,12,31);
-    Sets(1,k).OutOfSample = datetime(2010,01,01):datetime(2019,12,31);
-    Sets(1,k).InSample(month(Sets(1,k).InSample) == 2 & ...
-        day(Sets(1,k).InSample) == 29) = []; % Clean leap days
-    Sets(1,k).OutOfSample(month(Sets(1,k).OutOfSample) == 2 & ...
-        day(Sets(1,k).OutOfSample) == 29) = []; % Clean leap days
+    Sets(1,k).InSample = datetime(2008,01,01):datetime(2014,12,31);
+    Sets(1,k).OutOfSample = datetime(2015,01,01):datetime(2019,12,31);
+    Sets(1,k).InSample(month(Sets(1,k).InSample) == 2 ...
+        & day(Sets(1,k).InSample) == 29) ...
+        = []; % Clean leap days
+    Sets(1,k).OutOfSample(month(Sets(1,k).OutOfSample) == 2 ...
+        & day(Sets(1,k).OutOfSample) == 29) ...
+        = []; % Clean leap days
     
     Sets(1,k).Clean = DailyAverage(Sets(1,k).Clean(:,1), settings.avgType);
-    Sets(1,k).Clean(month(Sets(1,k).Clean.Time) == 2 & ...
-        day(Sets(1,k).Clean.Time) == 29,:) = [];
+    Sets(1,k).Clean(month(Sets(1,k).Clean.Time) == 2 ...
+        & day(Sets(1,k).Clean.Time) == 29,:) ...
+        = [];
 end
 
 % Check for nans
@@ -73,21 +76,18 @@ clear k n
 seasonFunction = @(a, t) a(1) + a(2) * t + ...
     a(3) * sin(2 * pi / 365 * (t - a(4)));
 
-X = zeros(4, length(Sets));
-FVAL = zeros(1,length(Sets));
-guess = [18, 0.0005, 5, 0];
+guess = [8, 0.0005, 5, 100];
 for k = 1 : length(Sets) % Iterate to deseason all chosen data sets
-    [X(:, k), FVAL(1,k)] = ...
+    [Sets(1,k).Season_Theta, Sets(1,k).Season_FVal] = ...
         Deseason(transpose(Sets(1,k).Clean.Degrees(Sets(1,k).InSample)), ...
         seasonFunction, length(Sets(1,k).InSample), guess, ...
         settings.fminconOptions);
-    % TODO: Add try/catch in Deseason
 end
 
 for k = 1 : length(Sets)
     Sets(1,k).Deseasoned = Sets(1,k).Clean(Sets(1,k).InSample,:);
     Sets(1,k).Deseasoned.Degrees = Sets(1,k).Deseasoned.Degrees - ...
-        transpose(seasonFunction(X(:,k), 0:length(Sets(1,k).InSample)-1));
+        transpose(seasonFunction(Sets(1,k).Season_Theta, 0:length(Sets(1,k).InSample)-1));
 end
 
 clear k guess
@@ -97,7 +97,7 @@ clear k guess
 close ALL
 
 % Settings for figures
-showFigures = false;
+showFigures = true;
 saveFigures = true;
 showSeason = true;
 showTref = false;
@@ -106,7 +106,7 @@ setPeriod = "In"; % Alternatives: "In", "InOut"
 
 status = zeros(1,length(Sets));
 for k = 1 : length(Sets) % Iterate to generate DAT figures
-    [status(k)] = GenerateDATPlot(Sets(1,k), seasonFunction, X(:,k), ...
+    [status(k)] = GenerateDATPlot(Sets(1,k), seasonFunction, Sets(1,k).Season_Theta, ...
         showFigures, saveFigures, showSeason, showTref, showLinTrend, ...
         setPeriod);
     %fprintf(sprintf('DAT plot status: %d.\n', status(1,k)))
@@ -145,31 +145,31 @@ f_VG_new = @(x, lambda, alpha, beta, mu) (alpha^2 - beta^2)^(2 * lambda) ...
     / (sqrt(pi) * gamma(lambda) * (2 * alpha)^(lambda - 1/2)) ...
     * exp(beta * (x - mu));
 
-%%
+%% Maximum likelihood estimation of 
 % lambda, alpha, beta, delta, mu
-guess.GH = [1, 1.7178, -0.3921, 1.6783, 0.6179]';
-guess.HYP = [(1), 1.7178, -0.3921, 1.6783, 0.6179]';
-guess.NIG = [(-1/2), 1.7178, -0.3921, 1.6783, 0.6179]';
+guess.GH = [1, 1.7178, 0.3921, 1.6783, 0.6179]';
+guess.HYP = [(1), 1.7178, 0.3921, 1.6783, 0.6179]';
+guess.NIG = [(-1/2), 1.7178, 0.3921, 1.6783, 0.6179]';
 guess.VG = [0.5, 0.3, 0.2, 1]';
 
-for k = 1 : length(Sets)
+for k = 1 : length(Sets) % Ska det vara MINUS log_likeli...?
     [Sets(1, k).ML_Theta.GH, Sets(1, k).ML_FVal.GH] = fmincon(@(x) ...
         -log_likelihood_f_GH(Sets(1, k).Deseasoned.Degrees, f_GH, x(1), x(2), x(3), x(4), x(5)), ...
         guess.GH, ...
-        [], [], [], [], [], [], [], settings.fminconOptions);
+        [], [], [], [], [-inf -inf -inf 0 -inf], [], [], settings.fminconOptions);
     %   A, b, Aeq, beq, lb, ub, nonlcon, options
     [Sets(1, k).ML_Theta.HYP, Sets(1, k).ML_FVal.HYP] = fmincon(@(x) ...
         -log_likelihood_f_GH(Sets(1, k).Deseasoned.Degrees, f_GH, x(1), x(2), x(3), x(4), x(5)), ...
         guess.HYP, ...
-        [], [], [], [], [], [], [], settings.fminconOptions);
+        [], [], [], [], [1 -inf -inf -inf -inf], [1 inf inf inf inf], [], settings.fminconOptions);
     [Sets(1, k).ML_Theta.NIG, Sets(1, k).ML_FVal.NIG] = fmincon(@(x) ...
         -log_likelihood_f_GH(Sets(1, k).Deseasoned.Degrees, f_GH, x(1), x(2), x(3), x(4), x(5)), ...
         guess.NIG, ...
-        [], [], [], [], [], [], [], settings.fminconOptions);
-    [Sets(1, k).ML_Theta.VG, Sets(1, k).ML_FVal.VG] = fmincon(@(x) ...
-        -log_likelihood_f_VG(Sets(1, k).Deseasoned.Degrees, f_VG_new, x(1), x(2), x(3), x(4)), ...
-        guess.VG, ...
-        [], [], [], [], [], [], [], settings.fminconOptions);
+        [], [], [], [], [-1/2 -inf -inf -inf -inf], [-1/2 inf inf inf inf], [], settings.fminconOptions);
+%     [Sets(1, k).ML_Theta.VG, Sets(1, k).ML_FVal.VG] = fmincon(@(x) ...
+%         -log_likelihood_f_VG(Sets(1, k).Deseasoned.Degrees, f_VG_new, x(1), x(2), x(3), x(4)), ...
+%         guess.VG, ...
+%         [], [], [], [], [], [], [], settings.fminconOptions);
 end
 %%
 
@@ -187,7 +187,6 @@ beta = 0.1839;
 delta = 5.5849e-6; 
 mu = 0.4638;
 
-
 %HYP
 lambda = 1;
 alpha = 1.71785; 
@@ -195,7 +194,8 @@ beta = -0.3921;
 delta = 1.6783; 
 mu = 0.6179;
 
-%f_GH(1, lambda, alpha, beta, delta, mu)
+%log(f_GH(1, lambda, alpha, beta, delta, mu))
+%log_f_GH(1, lambda, alpha, beta, delta, mu)
 
 %NIG
 lambda = -1/2;
@@ -212,8 +212,18 @@ delta = 0.0;
 mu = 0.5004;
 
 %f_GH(1, lambda, alpha, beta, delta, mu)
-test = zeros(length(Sets(1,1).Deseasoned.Degrees),1);
-for i = 1:length(Sets(1,1).Deseasoned.Degrees)
+pdf_series = zeros(length(Sets(1,1).Deseasoned.Degrees),1);
+sorted_deg = sort(Sets(1,1).Deseasoned.Degrees);
+%for i = 1:length(sorted_deg)
+n = 1;
+for i = -10:0.01:10
     %data = [ data f_GH(x_i, lambda, alpha, beta, delta, mu)];
-    test(i,1) = f_VG_new(Sets(1,1).Deseasoned.Degrees(i), lambda, alpha, beta, mu);
+    lambda = Sets(1,1).ML_Theta.NIG(1);
+    alpha = Sets(1,1).ML_Theta.NIG(2);
+    beta = Sets(1,1).ML_Theta.NIG(3);
+    delta = Sets(1,1).ML_Theta.NIG(4);
+    mu = Sets(1,1).ML_Theta.NIG(5);
+    %pdf_series(i,1) = f_GH(sorted_deg(i), lambda, alpha, beta, delta, mu);
+    test(n,3) = f_GH(i, lambda, alpha, beta, delta, mu);
+    n = n + 1;
 end

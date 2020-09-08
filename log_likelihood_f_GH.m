@@ -6,7 +6,7 @@ likelihood = 0;
 %data = [];
 for x_i = x'
     %data = [ data f_GH(x_i, lambda, alpha, beta, delta, mu)];
-    likelihood = likelihood + log(f_GH(x_i, lambda, alpha, beta, delta, mu));
+    likelihood = likelihood + (log_f_GH(x_i, lambda, alpha, beta, delta, mu));
 end
 
 %[lambda, alpha, beta, delta, mu]
