@@ -97,8 +97,8 @@ clear k guess
 close ALL
 
 % Settings for figures
-showFigures = true;
-saveFigures = true;
+showFigures = false;
+saveFigures = false;
 showSeason = true;
 showTref = false;
 showLinTrend = true;
@@ -129,7 +129,7 @@ clear k showFigures saveFigures showSeason showTref showLinTrend ...
 %% Parameter Estimation
 % Define GH probability density function
 f_GH = @(x, lambda, alpha, beta, delta, mu) ...
-    (alpha^2 - beta^2)^(lambda) ...
+    sqrt(alpha^2 - beta^2)^(lambda) ... % SKA DET VARA QRT HÄR?
     / (sqrt(2*pi) * delta^lambda * alpha^(lambda - 1/2) * besselk(lambda, delta * sqrt(alpha^2 - beta^2))) ...
     * (sqrt(delta^2 + (x - mu)^2))^(lambda - 1/2) ...
     * besselk(lambda - 1/2, alpha * sqrt(delta^2 + (x - mu)^2)) * exp(beta * (x - mu));
@@ -137,10 +137,8 @@ f_GH = @(x, lambda, alpha, beta, delta, mu) ...
 f_HYP = @(x, alpha, beta, delta, mu) f_GH(x, 1, alpha, beta, delta, mu);
 f_NIG = @(x, alpha, beta, delta, mu) f_GH(x, -1/2, alpha, beta, delta, mu);
 
-% Gör om VG-pdfen! Blir ogiltiga värden som den är nu.
-f_VG = @(x, lambda, alpha, beta, mu) f_GH(x, lambda, alpha, beta, 0, mu);
-
-f_VG_new = @(x, lambda, alpha, beta, mu) (alpha^2 - beta^2)^(2 * lambda) ...
+% Alternative VG pdf
+f_VG = @(x, lambda, alpha, beta, mu) sqrt(alpha^2 - beta^2)^(2 * lambda) ...
     * abs(x - mu)^(lambda - 1/2) * besselk(lambda - 1/2, alpha * abs(x - mu)) ...
     / (sqrt(pi) * gamma(lambda) * (2 * alpha)^(lambda - 1/2)) ...
     * exp(beta * (x - mu));
@@ -150,9 +148,9 @@ f_VG_new = @(x, lambda, alpha, beta, mu) (alpha^2 - beta^2)^(2 * lambda) ...
 guess.GH = [1, 1.7178, 0.3921, 1.6783, 0.6179]';
 guess.HYP = [(1), 1.7178, 0.3921, 1.6783, 0.6179]';
 guess.NIG = [(-1/2), 1.7178, 0.3921, 1.6783, 0.6179]';
-guess.VG = [0.5, 0.3, 0.2, 1]';
+guess.VG = [10, 2, -0.5, 5]';
 
-for k = 1 : length(Sets)
+for k = 1 : 1%length(Sets)
      %   A, b, Aeq, beq, lb, ub, nonlcon, options
     [Sets(1, k).ML_Theta.GH, Sets(1, k).ML_FVal.GH] = fmincon(@(x) ...
         -log_likelihood_f_GH(Sets(1, k).Deseasoned.Degrees, x(1), x(2), x(3), x(4), x(5)), ...
@@ -171,66 +169,77 @@ for k = 1 : length(Sets)
         guess.NIG, ...
         [0, -1, -1, 0 0; 0, -1, 1, 0, 0], [0;0], [], [], [-1/2 -inf -inf -inf -inf], [-1/2 inf inf inf inf], [], settings.fminconOptions);
     Sets(1, k).ML_FVal.NIG = -Sets(1, k).ML_FVal.NIG;
-    
-    %     [Sets(1, k).ML_Theta.VG, Sets(1, k).ML_FVal.VG] = fmincon(@(x) ...
-%         -log_likelihood_f_VG(Sets(1, k).Deseasoned.Degrees, x(1), x(2), x(3), x(4)), ...
-%         guess.VG, ...
-%         [0, -1, -1, 0 0; 0, -1, 1, 0, 0], [0;0], [], [], [], [], [], settings.fminconOptions);
-%     Sets(1, k).ML_FVal.VG = -Sets(1, k).ML_FVal.VG;
+%     
+     [Sets(1, k).ML_Theta.VG, Sets(1, k).ML_FVal.VG] = fmincon(@(x) ...
+         -log_likelihood_f_VG(Sets(1, k).Deseasoned.Degrees, x(1), x(2), x(3), x(4)), ...
+         guess.VG, ...
+         [0, -1, -1, 0; 0, -1, 1, 0], [0;0], [], [], [0 0 -inf -inf], [], [], settings.fminconOptions);
+     Sets(1, k).ML_FVal.VG = -Sets(1, k).ML_FVal.VG;
 end
 %%
+clearvars Pr1 Pr2 Pr1T Pr2T Theta_f p Q iter_f
 
-Theta = []; % Initial parameter guess. Use last known optimum
+Theta = [0.005, 0.1, 0.98, 10, 10, 0.95;
+         0.005, 0.1, 0.98, 10, 10, 0.95;
+         0.005, 0.1, 0.98, 10, 10, 0.95]; % Initial parameter guess. Use last known optimum
+p = [0.99 0.01;
+     0.30 0.70]
+%iter_f = zeros(1, 3);
 
-for k = 1 : length(Sets)
-    [Set_f(1, k), Theta_f(1, k)] = EM(Sets(1,k), Theta(k), 1000, true);
+for k = 1%length(Sets)
+    [Pr1(:,k), Pr2(:,k), Pr1T(:,k), Pr2T(:,k), Theta_f, p, Q(:,k), iter_f(1,k)] = ...
+        EM( ...
+            Sets(1,k), ...
+            Theta(k,:), ...
+            p, ...
+            15, ...
+            true);
 end
 
 %%
-%GH
-lambda = 3.2875; 
-alpha = 1.4813e-5; 
-beta = 0.1839; 
-delta = 5.5849e-6; 
-mu = 0.4638;
+% ML_Theta:
+m = 1;
+ml_t = Sets(1,1).ML_Theta.GH;
 
-%HYP
-lambda = 1;
-alpha = 1.71785; 
-beta = -0.3921; 
-delta = 1.6783; 
-mu = 0.6179;
+% GH/HYP/NIG
+lambda = ml_t(1);
+alpha = ml_t(2);
+beta = ml_t(3);
+delta = ml_t(4);
+mu = ml_t(5);
 
-%log(f_GH(1, lambda, alpha, beta, delta, mu))
-%log_f_GH(1, lambda, alpha, beta, delta, mu)
-
-%NIG
-lambda = -1/2;
-alpha = 1.5010; 
-beta = -0.4087; 
-delta = 2.2664; 
-mu = 0.6413;
 
 % VG
-lambda = 0.0144;
-alpha = 0.4968; 
-beta = -0.0140; 
-delta = 0.0; 
-mu = 0.5004;
+% lambda = ml_t(1);
+% alpha = ml_t(2);
+% beta = ml_t(3);
+% mu = ml_t(4);
 
 %f_GH(1, lambda, alpha, beta, delta, mu)
 pdf_series = zeros(length(Sets(1,1).Deseasoned.Degrees),1);
 sorted_deg = sort(Sets(1,1).Deseasoned.Degrees);
 %for i = 1:length(sorted_deg)
 n = 1;
-for i = -10:0.01:10
+test = [];
+for i = -20:0.01:20
     %data = [ data f_GH(x_i, lambda, alpha, beta, delta, mu)];
-    lambda = Sets(1,1).ML_Theta.NIG(1);
-    alpha = Sets(1,1).ML_Theta.NIG(2);
-    beta = Sets(1,1).ML_Theta.NIG(3);
-    delta = Sets(1,1).ML_Theta.NIG(4);
-    mu = Sets(1,1).ML_Theta.NIG(5);
     %pdf_series(i,1) = f_GH(sorted_deg(i), lambda, alpha, beta, delta, mu);
-    test(n,3) = f_GH(i, lambda, alpha, beta, delta, mu);
+    %test(n,1) = f_GH(i, lambda, alpha, beta, 0, mu);
+    test(n,1) = f_GH(i, lambda, alpha, beta, delta, mu);
+    %test(n,1) = f_VG(i, lambda, alpha, beta, mu);
     n = n + 1;
 end
+
+figure()
+plot(-20:0.01:20, test)
+
+%%
+
+
+
+%% Testing section
+k = 3;
+min(Sets(1,k).Deseasoned.Degrees)
+max(Sets(1,k).Deseasoned.Degrees)
+
+
