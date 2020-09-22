@@ -72,7 +72,6 @@ for t = length(T_deseason)-1 : -1 : 1
     Pr2T(t) = (Pr2(t) * Pr1T(t+1) * p(2, 1)) / (Pr1_tplus1) ...
         + (Pr2(t) * Pr2T(t+1) * p(2, 2)) / (Pr2_tplus1);
     
-    a=1+1;
     %fprintf("Pr1_tplus1: %.3f, Pr2_tplus1: %.3f. Pr1T(t): %.3f, Pr2T(t): %.3f.\n\n",...
     %    Pr1_tplus1, Pr2_tplus1, Pr1T(t), Pr2T(t));
 end

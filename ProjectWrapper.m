@@ -178,13 +178,19 @@ for k = 1 : 1%length(Sets)
 end
 %%
 clearvars Pr1 Pr2 Pr1T Pr2T Theta_f p Q iter_f
+model = 2;
+if (model == 1)
+    Theta = [0.5, 0.1, 0.98, 1, 3, 0.95;
+             0.5, 0.1, 0.98, 1, 3, 0.95;
+             0.5, 0.1, 0.98, 1, 3, 0.95]; % Initial parameter guess. Use last known 
+elseif (model == 2) 
+    Theta = [0.5, -5, 0.5, 0.98, 1, 3, 0.95];
+end
 
-Theta = [0.5, 0.1, 0.98, 1, 3, 0.95;
-         0.5, 0.1, 0.98, 1, 3, 0.95;
-         0.5, 0.1, 0.98, 1, 3, 0.95]; % Initial parameter guess. Use last known optimum
 p = [0.99 0.01;
      0.70 0.30]
 %iter_f = zeros(1, 3);
+
 
 for k = 1%length(Sets)
     [Pr1(:,k), Pr2(:,k), Pr1T(:,k), Pr2T(:,k), Theta_f, p, Q(:,k), iter_f(1,k)] = ...
@@ -192,7 +198,8 @@ for k = 1%length(Sets)
             Sets(1,k), ...
             Theta(k,:), ...
             p, ...
-            100, ...
+            model, ...
+            7, ...
             true);
 end
 
