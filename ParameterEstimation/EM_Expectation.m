@@ -1,12 +1,12 @@
-function [Pr1, Pr2, Pr1T, Pr2T] = EM_Expectation(T_deseason, p, theta_base, theta_shift, model, useKim)
+function [Pr1, Pr2, Pr1T, Pr2T] = EM_Expectation(T_deseason, Pr1T, Pr2T, p, theta_base, theta_shift, model, useKim)
 %EMEXPECTATION Summary of this function goes here
 %   Detailed explanation goes here
 
 % Set starting values
 Pr1 = zeros(1, length(T_deseason));
 Pr2 = zeros(1, length(T_deseason));
-Pr1(1) = 0.99;
-Pr2(1) = 0.01;
+Pr1(1) = Pr1T(1);
+Pr2(1) = Pr2T(1);
 
 %figure(); hold on
 %plot(0,0, '.');
@@ -20,7 +20,7 @@ for t = 2 : length(T_deseason) %
         p_1 = theta_base(3);
         p_2 = theta_shift(3);
         
-        f1 = 1 / (sigma_1 * abs(T_deseason(t-1)) * sqrt(2*pi)) ... % TODO: abs() HERE?
+        f1 = 1 / (sigma_1 * abs(T_deseason(t-1)) * sqrt(2*pi)) ...
             * exp(-1/2 * ((T_deseason(t) - (1 + kappa) * T_deseason(t-1)) ...
             / (sigma_1 * T_deseason(t-1)))^2);
         
@@ -52,14 +52,14 @@ for t = 2 : length(T_deseason) %
             / (p_1 * f1 + p_2 * f2);
     else
         % Compute forecast probabilities:
-        Pr1_tminus1 = Pr1(t-1) * p(1, 1) + Pr2(t-1) * p(2, 1);
-        Pr2_tminus1 = Pr1(t-1) * p(1, 2) + Pr2(t-1) * p(2, 2);
+        Pr1_Ftminus1 = Pr1(t-1) * p(1, 1) + Pr2(t-1) * p(2, 1);
+        Pr2_Ftminus1 = Pr1(t-1) * p(1, 2) + Pr2(t-1) * p(2, 2);
 
         % Compute state membership probability for time t
-        Pr1(t) = Pr1_tminus1 * f1 ...
-            / (Pr1_tminus1 * f1 + Pr2_tminus1 * f2);
-        Pr2(t) = Pr2_tminus1 * f2 ...
-            / (Pr1_tminus1 * f1 + Pr2_tminus1 * f2);
+        Pr1(t) = Pr1_Ftminus1 * f1 ...
+            / (Pr1_Ftminus1 * f1 + Pr2_Ftminus1 * f2);
+        Pr2(t) = Pr2_Ftminus1 * f2 ...
+            / (Pr1_Ftminus1 * f1 + Pr2_Ftminus1 * f2);
     end
     %plot(t,f1,'.');
     %pause(0.001)
@@ -94,4 +94,3 @@ else
 end
 
 end
-

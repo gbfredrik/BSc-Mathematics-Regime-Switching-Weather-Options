@@ -178,36 +178,39 @@ for k = 1 : length(Sets)
      Sets(1, k).ML_FVal.VG = -Sets(1, k).ML_FVal.VG;
 end
 %%
+%{
 clearvars Pr1 Pr2 Pr1T Pr2T Theta_f p Q iter_f
 model = 1;
-useKim = false;
+useKim = 0;
 
 if (model == 1)
-    Theta = [0.5, 0.1, 0.98, 1, 3, 0.95;
-             0.5, 0.1, 0.98, 1, 3, 0.95;
-             0.5, 0.1, 0.98, 1, 3, 0.95]; % Initial parameter guess. Use last known 
+    Theta = [0, 0.5, 0.98, 20, 2, 0.6;
+             0, 0.5, 0.98, 20, 2, 0.6;
+             0, 0.5, 0.98, 20, 2, 0.6]; % Initial parameter guess. Use last known 
 elseif (model == 2) 
-    Theta = [0.5, -5, 0.5, 0.98, 1, 3, 0.95];
+    Theta = [1, -5, 0.5, 0.98, 20, 3, 0.6;
+             1, -5, 0.5, 0.98, 20, 3, 0.6;
+             1, -5, 0.5, 0.98, 20, 3, 0.6];
 end
 
 p = [0.99 0.01;
-     0.70 0.30]
+     0.70 0.30];
 %iter_f = zeros(1, 3);
-
 
 for k = 1%length(Sets)
     [Pr1(:,k), Pr2(:,k), Pr1T(:,k), Pr2T(:,k), Theta_f, p, Q(:,k), iter_f(1,k)] = ...
         EM( ...
-            Sets(1,k), ...
+            Sets(1,k).Deseasoned.Degrees, ...
             Theta(k,:), ...
             p, ...
             model, ...
-            10, ...
+            100, ...
             true, ...
             useKim);
 end
-
+%}
 %%
+%{
 % ML_Theta:
 m = 1;
 ml_t = Sets(1,1).ML_Theta.GH;
@@ -232,25 +235,46 @@ sorted_deg = sort(Sets(1,1).Deseasoned.Degrees);
 %for i = 1:length(sorted_deg)
 n = 1;
 test = [];
-for i = -10:0.01:10
+
+for x_i = sorted_deg'
     %data = [ data f_GH(x_i, lambda, alpha, beta, delta, mu)];
     %pdf_series(i,1) = f_GH(sorted_deg(i), lambda, alpha, beta, delta, mu);
     %test(n,1) = f_GH(i, lambda, alpha, beta, 0, mu);
-    test(n,1) = f_GH(i, lambda, alpha, beta, delta, mu);
+    test(n,1) = f_GH(x_i, lambda, alpha, beta, delta, mu);
     %test(n,1) = f_VG(i, lambda, alpha, beta, mu);
     n = n + 1;
 end
 
 figure()
-plot(-20:0.01:20, test)
-
+qqplot(test)
+%}
 %%
 
 
 
 %% Testing section
-k = 3;
+%{
+k = 1;
 min(Sets(1,k).Deseasoned.Degrees)
 max(Sets(1,k).Deseasoned.Degrees)
+T_deseason = Sets(1,k).Deseasoned.Degrees;
+
+%
+
+for t = 2 : length(T_deseason)
+    kappa = Theta_f(1);
+    sigma_1 = Theta_f(2);
+    mu_2 = Theta_f(4);
+    sigma_2 = Theta_f(5);
+        
+    f1 = 1 / (sigma_1 * abs(T_deseason(t-1)) * sqrt(2*pi)) ...
+        * exp(-1/2 * ((T_deseason(t) - (1 + kappa) * T_deseason(t-1)) ...
+        / (sigma_1 * T_deseason(t-1)))^2);
+
+    f2 = 1 / (sigma_2 * sqrt(2*pi)) ...
+        * exp(-1/2 * ((T_deseason(t) - (T_deseason(t-1) + mu_2)) ...
+        / (sigma_2))^2);
+end
+%}
 
 
