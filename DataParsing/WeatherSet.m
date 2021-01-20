@@ -18,5 +18,7 @@ classdef WeatherSet
         
         ML_Theta
         ML_FVal
+        
+        EM
     end
 end

@@ -46,7 +46,8 @@ clear sourceDir sourceFiles k; % Remove variables not to be used again
 % Transform the data and calculate daily average temperatures
 
 for k = 1 : length(Sets) % Iterate to parse all chosen data sets
-    Sets(1,k).InSample = datetime(2008,01,01):datetime(2014,12,31);
+%TODO     Sets(1,k).InSample = datetime(2008,01,01):datetime(2014,12,31);
+    Sets(1,k).InSample = datetime(2005,01,01):datetime(2019,12,31);
     Sets(1,k).OutOfSample = datetime(2015,01,01):datetime(2019,12,31);
     Sets(1,k).InSample(month(Sets(1,k).InSample) == 2 ...
         & day(Sets(1,k).InSample) == 29) ...
@@ -146,69 +147,88 @@ f_VG = @(x, lambda, alpha, beta, mu) ...
 
 %% Maximum likelihood estimation of 
 % lambda, alpha, beta, delta, mu
-guess.GH = [1, 1.7178, 0.3921, 1.6783, 0.6179]';
-guess.HYP = [(1), 1.7178, 0.3921, 1.6783, 0.6179]';
-guess.NIG = [(-1/2), 1.7178, 0.3921, 1.6783, 0.6179]';
-guess.VG = [10, 2, -0.5, 5]';
-
-for k = 1 : length(Sets)
-     %   A, b, Aeq, beq, lb, ub, nonlcon, options
-    [Sets(1, k).ML_Theta.GH, Sets(1, k).ML_FVal.GH] = fmincon(@(x) ...
-        -log_likelihood_f_GH(Sets(1, k).Deseasoned.Degrees, x(1), x(2), x(3), x(4), x(5)), ...
-        guess.GH, ...
-        [0, -1, -1, 0 0; 0, -1, 1, 0, 0], [0;0], [], [], [-inf -inf -inf 0 -inf], [], [], settings.fminconOptions);
-    Sets(1, k).ML_FVal.GH = -Sets(1, k).ML_FVal.GH; % Correct FVal to not be minimized
-    
-    [Sets(1, k).ML_Theta.HYP, Sets(1, k).ML_FVal.HYP] = fmincon(@(x) ...
-        -log_likelihood_f_GH(Sets(1, k).Deseasoned.Degrees, x(1), x(2), x(3), x(4), x(5)), ...
-        guess.HYP, ...
-        [0, -1, -1, 0 0; 0, -1, 1, 0, 0], [0;0], [], [], [1 -inf -inf -inf -inf], [1 inf inf inf inf], [], settings.fminconOptions);
-    Sets(1, k).ML_FVal.HYP = -Sets(1, k).ML_FVal.HYP;
-
-    [Sets(1, k).ML_Theta.NIG, Sets(1, k).ML_FVal.NIG] = fmincon(@(x) ...
-        -log_likelihood_f_GH(Sets(1, k).Deseasoned.Degrees, x(1), x(2), x(3), x(4), x(5)), ...
-        guess.NIG, ...
-        [0, -1, -1, 0 0; 0, -1, 1, 0, 0], [0;0], [], [], [-1/2 -inf -inf -inf -inf], [-1/2 inf inf inf inf], [], settings.fminconOptions);
-    Sets(1, k).ML_FVal.NIG = -Sets(1, k).ML_FVal.NIG;
+% guess.GH = [1, 1.7178, 0.3921, 1.6783, 0.6179]';
+% guess.HYP = [(1), 1.7178, 0.3921, 1.6783, 0.6179]';
+% guess.NIG = [(-1/2), 1.7178, 0.3921, 1.6783, 0.6179]';
+% guess.VG = [10, 2, -0.5, 5]';
+% 
+% for k = 1 : length(Sets)
+%      %   A, b, Aeq, beq, lb, ub, nonlcon, options
+%     [Sets(1, k).ML_Theta.GH, Sets(1, k).ML_FVal.GH] = fmincon(@(x) ...
+%         -log_likelihood_f_GH(Sets(1, k).Deseasoned.Degrees, x(1), x(2), x(3), x(4), x(5)), ...
+%         guess.GH, ...
+%         [0, -1, -1, 0 0; 0, -1, 1, 0, 0], [0;0], [], [], [-inf -inf -inf 0 -inf], [], [], settings.fminconOptions);
+%     Sets(1, k).ML_FVal.GH = -Sets(1, k).ML_FVal.GH; % Correct FVal to not be minimized
 %     
-    [Sets(1, k).ML_Theta.VG, Sets(1, k).ML_FVal.VG] = fmincon(@(x) ...
-         -log_likelihood_f_VG(Sets(1, k).Deseasoned.Degrees, x(1), x(2), x(3), x(4)), ...
-         guess.VG, ...
-         [0, -1, -1, 0; 0, -1, 1, 0], [0;0], [], [], [0 0 -inf -inf], [], [], settings.fminconOptions);
-     Sets(1, k).ML_FVal.VG = -Sets(1, k).ML_FVal.VG;
-end
+%     [Sets(1, k).ML_Theta.HYP, Sets(1, k).ML_FVal.HYP] = fmincon(@(x) ...
+%         -log_likelihood_f_GH(Sets(1, k).Deseasoned.Degrees, x(1), x(2), x(3), x(4), x(5)), ...
+%         guess.HYP, ...
+%         [0, -1, -1, 0 0; 0, -1, 1, 0, 0], [0;0], [], [], [1 -inf -inf -inf -inf], [1 inf inf inf inf], [], settings.fminconOptions);
+%     Sets(1, k).ML_FVal.HYP = -Sets(1, k).ML_FVal.HYP;
+% 
+%     [Sets(1, k).ML_Theta.NIG, Sets(1, k).ML_FVal.NIG] = fmincon(@(x) ...
+%         -log_likelihood_f_GH(Sets(1, k).Deseasoned.Degrees, x(1), x(2), x(3), x(4), x(5)), ...
+%         guess.NIG, ...
+%         [0, -1, -1, 0 0; 0, -1, 1, 0, 0], [0;0], [], [], [-1/2 -inf -inf -inf -inf], [-1/2 inf inf inf inf], [], settings.fminconOptions);
+%     Sets(1, k).ML_FVal.NIG = -Sets(1, k).ML_FVal.NIG;
+% %     
+%     [Sets(1, k).ML_Theta.VG, Sets(1, k).ML_FVal.VG] = fmincon(@(x) ...
+%          -log_likelihood_f_VG(Sets(1, k).Deseasoned.Degrees, x(1), x(2), x(3), x(4)), ...
+%          guess.VG, ...
+%          [0, -1, -1, 0; 0, -1, 1, 0], [0;0], [], [], [0 0 -inf -inf], [], [], settings.fminconOptions);
+%      Sets(1, k).ML_FVal.VG = -Sets(1, k).ML_FVal.VG;
+% end
 %%
-%{
+%
 clearvars Pr1 Pr2 Pr1T Pr2T Theta_f p Q iter_f
+close all
 model = 1;
 useKim = 0;
 
 if (model == 1)
-    Theta = [0, 0.5, 0.98, 20, 2, 0.6;
-             0, 0.5, 0.98, 20, 2, 0.6;
-             0, 0.5, 0.98, 20, 2, 0.6]; % Initial parameter guess. Use last known 
+    Theta = [0, 0.1, 0.98, 3, 6, 0.02;
+             0, 0.01, 0.98, 0, 30, 0.02;
+             0, 0.1, 0.98, 0, 3, 0.02]; % Initial parameter guess. Use last known 
 elseif (model == 2) 
     Theta = [1, -5, 0.5, 0.98, 20, 3, 0.6;
              1, -5, 0.5, 0.98, 20, 3, 0.6;
              1, -5, 0.5, 0.98, 20, 3, 0.6];
 end
 
-p = [0.99 0.01;
-     0.70 0.30];
-%iter_f = zeros(1, 3);
+p = [0.95 0.05;
+     0.05 0.95];
 
-for k = 1%length(Sets)
-    [Pr1(:,k), Pr2(:,k), Pr1T(:,k), Pr2T(:,k), Theta_f, p, Q(:,k), iter_f(1,k)] = ...
+for k = 3%1:length(Sets)    
+    [EM.Pr1, EM.Pr2, EM.Pr1T, EM.Pr2T, EM.Theta_f, EM.p, EM.Q, EM.iter_f] = ...
         EM( ...
-            Sets(1,k).Deseasoned.Degrees, ...
+            cumsum(Sets(1,k).Deseasoned.Degrees), ...
             Theta(k,:), ...
             p, ...
             model, ...
             100, ...
             true, ...
             useKim);
+    Sets(1,k).EM = EM; clearvars EM
+        
+    GenerateStatePlot( ...
+        Sets(1,k).Deseasoned.Degrees, ...
+        Sets(1,k).EM.Pr1T', ...
+        Sets(1,k).EM.Pr2T', ...
+        0.8);
+    
+    figure();
+    plot(Sets(1,k).EM.Q);
+
+    fprintf('Finished at iteration: %i, with Q value: %.1f.\n', ...
+        Sets(1,k).EM.iter_f, ...
+        Sets(1,k).EM.Q(end));
+    fprintf('Optimal parameter set is:');
+    disp(Sets(1,k).EM.Theta_f(end,:));
 end
-%}
+
+% Clear temp vars
+
+
 %%
 %{
 % ML_Theta:
@@ -249,32 +269,26 @@ figure()
 qqplot(test)
 %}
 %%
+% ML_Theta:
+m = 1;
+ml_t = Sets(1,1).ML_Theta.GH;
 
+% GH/HYP/NIG
+lambda = ml_t(1);
+alpha = ml_t(2);
+beta = ml_t(3);
+delta = ml_t(4);
+mu = ml_t(5);
 
+my_fun = @(x) f_GH(x, lambda, alpha, beta, delta, mu)
+
+points = -100:0.001:50;
+P_GH = zeros(length(points), 1);
+%for k = 1 : length(Sets)
+    for x = -100:0.001:50
+       %test(n,1) = integral(my_fun, -Inf, x);
+    end
+%end
 
 %% Testing section
-%{
-k = 1;
-min(Sets(1,k).Deseasoned.Degrees)
-max(Sets(1,k).Deseasoned.Degrees)
-T_deseason = Sets(1,k).Deseasoned.Degrees;
-
-%
-
-for t = 2 : length(T_deseason)
-    kappa = Theta_f(1);
-    sigma_1 = Theta_f(2);
-    mu_2 = Theta_f(4);
-    sigma_2 = Theta_f(5);
-        
-    f1 = 1 / (sigma_1 * abs(T_deseason(t-1)) * sqrt(2*pi)) ...
-        * exp(-1/2 * ((T_deseason(t) - (1 + kappa) * T_deseason(t-1)) ...
-        / (sigma_1 * T_deseason(t-1)))^2);
-
-    f2 = 1 / (sigma_2 * sqrt(2*pi)) ...
-        * exp(-1/2 * ((T_deseason(t) - (T_deseason(t-1) + mu_2)) ...
-        / (sigma_2))^2);
-end
-%}
-
 
