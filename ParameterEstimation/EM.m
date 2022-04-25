@@ -3,15 +3,19 @@ function [Pr1, Pr2, Pr1T, Pr2T, Theta_f, p, Q, iter_f] = EM(T_deseason, Theta, p
 % Iteration settings
 iter_f = 0;
 delta_Theta = 1;
-eps = 1e-6;
+eps = 1e-10;
 
 % Initial assignment
 Theta_f = Theta;
 Pr1T = zeros(1, length(T_deseason));
 Pr2T = zeros(1, length(T_deseason));
-Pr1T(1) = 0.99;
-Pr2T(1) = 0.01;
-
+if (model == 1)
+    Pr1T(1) = Theta(3);
+    Pr2T(1) = Theta(6);
+elseif (model == 2)
+    Pr1T(1) = Theta(4);
+    Pr2T(1) = Theta(7);
+end
 
 % Model 1 Theta: kappa, sigma_1, p_1, mu_2, sigma_2, p_2
 % Model 2 Theta: beta, mu_1, sigma_1, p_1, mu_2, sigma_2, p_2
@@ -49,10 +53,10 @@ while (delta_Theta > eps)
     if (model == 1)
         [Theta_f(end+1, :), p_n, Q(end+1, :)] = EM_Maximization( ...
             T_deseason, ...
-            Pr1_n>0.5, ...
-            Pr2_n>0.5, ...
-            Pr1T_n>0.5, ...
-            Pr2T_n>0.5, ...
+            Pr1_n, ... % > 0.5?
+            Pr2_n, ... % > 0.5?
+            Pr1T_n, ... % > 0.5?
+            Pr2T_n, ... % > 0.5?
             p, ...
             Theta_f(iter_f, 1:3), ...
             Theta_f(iter_f, 4:6), ...
@@ -60,7 +64,7 @@ while (delta_Theta > eps)
             useKim);
         
     elseif (model == 2)
-        [Theta_f(end+1, :), p_n, Q(end+1, 1)] = EM_Maximization( ...
+        [Theta_f(end+1, :), p_n, Q(end+1, :)] = EM_Maximization( ...
             T_deseason, ...
             Pr1_n, ...
             Pr2_n, ...
@@ -80,22 +84,24 @@ while (delta_Theta > eps)
     if printToggle
         fprintf("Iteration: %d, deltaTheta: %d, Q: %.3f.\n\n",...
             iter_f, deltaTheta, Q(end, 1));
+        fprintf(" ... with parameters:\n");
+        disp(Theta_f(end,:));
     end
     
     if (iter_f > 1)
-        if Q(end, 1) < Q(end-1, 1)
-            Theta_f = Theta_f(1:end-1, :);
-            Q = Q(1:end-1, 1);
-            iter_f = iter_f - 1;
-            %TODO: Returnera gamla Pr1...2 osv här!
-            break
-        else
+%         if Q(end, 1) < Q(end-1, 1)
+%             Theta_f = Theta_f(1:end-1, :);
+%             Q = Q(1:end-1, 1);
+%             iter_f = iter_f - 1;
+%             
+%             break
+%         else
             Pr1 = Pr1_n;
             Pr2 = Pr2_n;
             Pr1T = Pr1T_n;
             Pr2T = Pr2T_n;
             p = p_n;
-        end
+%         end
     else
         Pr1 = Pr1_n;
         Pr2 = Pr2_n;
