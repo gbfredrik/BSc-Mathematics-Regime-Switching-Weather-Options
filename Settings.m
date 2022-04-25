@@ -10,7 +10,7 @@ classdef Settings
         N = 10000
         %D = 1/NamedConst.R
         avgType = 'MinMax' % Set average type DAT series, toggle 'MinMax' or ' Mean'
-        fminconOptions = optimoptions('fmincon', 'Display', 'off')
+        fminconOptions = optimoptions('fmincon', 'Display', 'iter');%, 'StepTolerance', 1e-10, 'FunctionTolerance', 1e-10, 'ConstraintTolerance', 1e-10)
         rndSeed = 'Default'
     end
 end
